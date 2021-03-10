@@ -1,4 +1,5 @@
 # just-func-python
+[![Python application](https://github.com/justland/just-func-python/actions/workflows/python-app.yml/badge.svg)](https://github.com/justland/just-func-python/actions/workflows/python-app.yml)
 
 Python implementation of [just-func](https://github.com/justland/just-func).
 
