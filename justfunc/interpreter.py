@@ -1,14 +1,6 @@
 from functools import reduce
 
-
-class ArityError(RuntimeError):
-    pass
-
-
-class TooFewArgumentsError(ArityError):
-    def __init__(self, expected, given):
-        self.msg = f"Expected: at least {expected}; given: {given}"
-        super().__init__(self.msg)
+from justfunc.errors import TooFewArgumentsError
 
 
 def evaluate(source, env=()):
@@ -26,6 +18,13 @@ def evaluate(source, env=()):
             lambda x, y: x - y,
             (_evaluate(arg, ctx) for arg in args))
 
+    def _multiply(args, ctx):
+        if not args:
+            return 1
+        return reduce(
+            lambda x, y: x * y,
+            (_evaluate(arg, ctx) for arg in args))
+
     def _lookup(key, ctx):
         value = next((v for (k, v) in ctx if k == key), None)
         return value
@@ -33,6 +32,8 @@ def evaluate(source, env=()):
     def _evaluate(expr, ctx):
         if type(expr) == tuple:
             symbol, *args = expr
+            if symbol == "*":
+                return _multiply(args, ctx)
             if symbol == "+":
                 return _add(args, ctx)
             if symbol == "-":
