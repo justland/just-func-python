@@ -1,7 +1,7 @@
 import pytest
 
 from justfunc.interpreter import evaluate
-from justfunc.errors import TooFewArgumentsError
+from justfunc.errors import TooFewArguments
 
 
 def test_add():
@@ -25,7 +25,7 @@ def test_subtract():
 
 
 def test_subtract_with_too_few_arguments_raises_an_error():
-    with pytest.raises(TooFewArgumentsError):
+    with pytest.raises(TooFewArguments):
         evaluate(("-",))
 
 

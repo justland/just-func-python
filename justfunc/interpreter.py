@@ -1,6 +1,6 @@
 from functools import reduce
 
-from justfunc.errors import TooFewArgumentsError
+from justfunc.errors import TooFewArguments, UnknownSymbol
 
 
 def evaluate(source, env=()):
@@ -11,7 +11,7 @@ def evaluate(source, env=()):
 
     def _subtract(args, ctx):
         if not args:
-            raise TooFewArgumentsError(1, 0)
+            raise TooFewArguments(1, 0)
         if len(args) == 1:
             return -_evaluate(args[0], ctx)
         return reduce(
@@ -29,6 +29,18 @@ def evaluate(source, env=()):
         value = next((v for (k, v) in ctx if k == key), None)
         return value
 
+    def _let(args, ctx):
+        param_assignments, expr = args
+        new_ctx = ctx
+        for assignment in param_assignments:
+            if type(assignment) == tuple:
+                name, value = assignment
+                new_ctx = _assign(name, value, new_ctx)
+        return _evaluate(expr, new_ctx)
+
+    def _assign(name, value, ctx):
+        return ctx + ((name, value),)
+
     def _evaluate(expr, ctx):
         if type(expr) == tuple:
             symbol, *args = expr
@@ -38,7 +50,11 @@ def evaluate(source, env=()):
                 return _add(args, ctx)
             if symbol == "-":
                 return _subtract(args, ctx)
+            if symbol == "let":
+                return _let(args, ctx)
             value = _lookup(symbol, ctx)
+            if value is None:
+                raise UnknownSymbol(symbol)
             return _evaluate(value, ctx)
         return expr
 
