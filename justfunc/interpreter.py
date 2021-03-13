@@ -3,31 +3,27 @@ from functools import reduce
 from justfunc.errors import TooFewArguments, UnknownSymbol
 
 
-def evaluate(source, env=()):
+def evaluate(source, env=None):
     def _add(args, ctx):
         if not args:
             return 0
-        return sum(_evaluate(arg, ctx) for arg in args)
+        return sum(_expression(arg, ctx) for arg in args)
 
     def _subtract(args, ctx):
         if not args:
             raise TooFewArguments(1, 0)
         if len(args) == 1:
-            return -_evaluate(args[0], ctx)
+            return -_expression(args[0], ctx)
         return reduce(
             lambda x, y: x - y,
-            (_evaluate(arg, ctx) for arg in args))
+            (_expression(arg, ctx) for arg in args))
 
     def _multiply(args, ctx):
         if not args:
             return 1
         return reduce(
             lambda x, y: x * y,
-            (_evaluate(arg, ctx) for arg in args))
-
-    def _lookup(key, ctx):
-        value = next((v for (k, v) in ctx if k == key), None)
-        return value
+            (_expression(arg, ctx) for arg in args))
 
     def _let(args, ctx):
         param_assignments, expr = args
@@ -36,12 +32,20 @@ def evaluate(source, env=()):
             if type(assignment) == tuple:
                 name, value = assignment
                 new_ctx = _assign(name, value, new_ctx)
-        return _evaluate(expr, new_ctx)
+        return _expression(expr, new_ctx)
+
+    def _merge_dicts(x, y):
+        z = x.copy()
+        z.update(y)
+        return z
+
+    def _lookup(key, ctx):
+        return ctx.get(key)
 
     def _assign(name, value, ctx):
-        return ctx + ((name, value),)
+        return _merge_dicts(ctx, {name: value})
 
-    def _evaluate(expr, ctx):
+    def _expression(expr, ctx):
         if type(expr) == tuple:
             symbol, *args = expr
             if symbol == "*":
@@ -55,7 +59,7 @@ def evaluate(source, env=()):
             value = _lookup(symbol, ctx)
             if value is None:
                 raise UnknownSymbol(symbol)
-            return _evaluate(value, ctx)
+            return _expression(value, ctx)
         return expr
 
-    return _evaluate(source, env)
+    return _expression(source, env if env is not None else dict())
