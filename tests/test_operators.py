@@ -34,3 +34,13 @@ def test_multiply():
     assert evaluate(("*", 5)) == 5
     assert evaluate(("*", 5, 99)) == 495
     assert evaluate(("*", ("*", 5), 10)) == 50
+
+
+def test_divide():
+    assert evaluate(("/", 3)) == ("ratio", 1, 3)
+    assert evaluate(("/", 1, 2)) == ("ratio", 1, 2)
+    assert evaluate(("/", 12.5)) == 0.08
+    assert evaluate(("/", 4.5, 1.2)) == 3.75
+    assert evaluate(("/", ("ratio", 1, 2), ("ratio", 3, 4))) == ("ratio", 2, 3)
+    assert evaluate(("/", ("ratio", 1, 3), 10.0)) == 0.03333333333333333
+    assert evaluate(("/", ("ratio", 2, 3), 4)) == ("ratio", 1, 6)
