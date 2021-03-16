@@ -1,47 +1,37 @@
-import pytest
-
 from justfunc.interpreter import evaluate
-from justfunc.errors import TooFewArguments
-from justfunc.number import Ratio, Int, Float
 
 
 def test_add():
-    assert evaluate(("+",)) == Int(0)
-    assert evaluate(("+", Int(1))) == Int(1)
-    assert evaluate(("+", Int(1), Int(2))) == Int(3)
-    assert evaluate(("+", Int(21), Int(35), Int(12), Int(7))) == Int(75)
-    assert evaluate(("+", Float(2.7), Int(10))) == Float(12.7)
-    assert evaluate(("+", ("+", Int(1), Int(2)), ("+", Int(3), Int(4)))) == Int(10)
-    assert evaluate(("+", ("x",), ("y",)), dict(x=Int(1), y=Int(2))) == Int(3)
-    assert evaluate(("+", Int(1), ("y",)), dict(y=("+", Int(2), Int(3)))) == Int(6)
+    assert evaluate(["+"]) == 0
+    assert evaluate(["+", 1]) == 1
+    assert evaluate(["+", 137, 349]) == 486
+    assert evaluate(["+", 2.7, 10]) == 12.7
+    assert evaluate(["+", 21, 35, 12, 7]) == 75
+    assert evaluate(["+", ["+", 1, 2], ["+", 3, 4]]) == 10
+    assert evaluate(["+", ["ret", "x"], ["ret", "y"]], (("x", 1), ("y", 2))) == 3
 
 
 def test_subtract():
-    assert evaluate(("-", Int(1))) == Int(-1)
-    assert evaluate(("-", Int(1000), Int(334))) == Int(666)
-    assert evaluate(("-", Float(10.6), Float(2.3))) == Float(8.3)
-    assert evaluate(("-", ("-", Int(3)))) == Int(3)
-    assert evaluate(("-", ("-", Int(10), Int(2)), ("-", Int(3), Int(1)))) == Int(6)
-    assert evaluate(("-", ('x',), ("y",)), dict(x=Int(10), y=Int(5))) == Int(5)
-
-
-def test_subtract_with_too_few_arguments_raises_an_error():
-    with pytest.raises(TooFewArguments):
-        evaluate(("-",))
+    assert evaluate(["-", 1]) == -1
+    assert evaluate(["-", 1000, 334]) == 666
+    assert evaluate(["-", ["-", 1000, 334], ["-", 70, 4]]) == 600
+    assert evaluate(["-", ["ret", "x"], ["ret", "y"]], (("x", 100), ("y", 50))) == 50
 
 
 def test_multiply():
-    assert evaluate(("*",)) == Int(1)
-    assert evaluate(("*", Int(5))) == Int(5)
-    assert evaluate(("*", Int(5), Int(99))) == Int(495)
-    assert evaluate(("*", ("*", Int(5)), Int(10))) == Int(50)
+    assert evaluate(["*"]) == 1
+    assert evaluate(["*", 20]) == 20
+    assert evaluate(["*", 5, 99]) == 495
+    assert evaluate(["*", ["*", 10, 5], ["*", 2, 3]]) == 300
+    assert evaluate(["*", ["ret", "x"], ["ret", "y"]], (("x", 5), ("y", 5))) == 25
 
 
 def test_divide():
-    assert evaluate(("/", Int(3))) == Ratio(1, 3)
-    assert evaluate(("/", Int(1), Int(2))) == Ratio(1, 2)
-    assert evaluate(("/", Float(12.5))) == Float(0.08)
-    assert evaluate(("/", Float(4.5), Float(1.2))) == Float(3.75)
-    assert evaluate(("/", Ratio(1, 2), Ratio(3, 4))) == Ratio(2, 3)
-    assert evaluate(("/", Ratio(1, 3), Float(10.0))) == Float(0.03333333333333333)
-    assert evaluate(("/", Ratio(2, 3), Int(4))) == Ratio(1, 6)
+    assert evaluate(["/", 10]) == 0.1
+    assert evaluate(["/", 10, 5]) == 2
+    assert evaluate(["/", ["/", 1, 2], ["/", 1, 2]]) == 1
+    assert evaluate(["/", ["ret", "x"], ["ret", "y"]], (("x", 9), ("y", 3))) == 3
+
+
+def test_operator_combinations():
+    return evaluate(["+", ["*", 3, 5], ["-", 10, 6]]) == 19

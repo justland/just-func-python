@@ -9,5 +9,5 @@ def test_evaluates_literals():
     assert evaluate("a string") == "a string"
     assert evaluate(True) is True
     assert evaluate(False) is False
-    assert evaluate(dict()) == dict()
+    assert evaluate({}) == {}
     assert evaluate(None) is None

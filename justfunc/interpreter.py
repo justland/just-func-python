@@ -1,87 +1,111 @@
 from functools import reduce
 
-from justfunc.errors import UnknownSymbol, TooFewArguments
-from justfunc.number import Float, Int, Ratio
+
+def is_self_evaluating(expr):
+    return type(expr) in [str, int, float, bool, dict, None]
 
 
-def evaluate(source, env=None):
-    return expression(source, env if env is not None else dict())
+def is_application(expr):
+    return type(expr) == list and len(expr) >= 1
 
 
-def merge_dicts(x, y):
-    z = x.copy()
-    z.update(y)
-    return z
-
-
-def lookup(key, ctx):
-    return ctx.get(key)
-
-
-def assign(name, value, ctx):
-    return merge_dicts(ctx, {name: value})
-
-
-def expression(expr, ctx):
-    if type(expr) == tuple:
-        symbol, *args = expr
-        if symbol == "*":
-            return multiply(args, ctx)
-        if symbol == "+":
-            return add(args, ctx)
-        if symbol == "-":
-            return subtract(args, ctx)
-        if symbol == "/":
-            return divide(args, ctx)
-        if symbol == "let":
-            return let(args, ctx)
-        value = lookup(symbol, ctx)
-        if value is None:
-            raise UnknownSymbol(symbol)
-        return expression(value, ctx)
-    return expr
-
-
-def add(args, ctx):
+def add(args):
     if not args:
-        return Int(0)
-    return reduce(lambda x, y: x + y, (expression(arg, ctx) for arg in args))
+        return 0
+    return reduce(lambda x, y: x + y, args, 0)
 
 
-def subtract(args, ctx):
-    if not args:
-        raise TooFewArguments(1, 0)
+def subtract(args):
     if len(args) == 1:
-        return Int(-expression(args[0], ctx).value)
-    return reduce(
-        lambda x, y: x - y,
-        (expression(arg, ctx) for arg in args))
+        return -args[0]
+    return reduce(lambda x, y: x - y, args[1:], args[0])
 
 
-def multiply(args, ctx):
-    if not args:
-        return Int(1)
-    return reduce(
-        lambda x, y: x * y,
-        (expression(arg, ctx) for arg in args))
+def multiply(args):
+    return reduce(lambda x, y: x * y, args, 1)
 
 
-def divide(args, ctx):
+def divide(args):
     if len(args) == 1:
-        d = expression(args[0], ctx)
-        if type(d) == Float:
-            return Int(1) / d
-        if type(d) == Ratio:
-            return Ratio.make(1, 1) / d
-        return Ratio.make(1, d.value)
-    return reduce(lambda x, y: x / y, (expression(arg, ctx) for arg in args))
+        return 1 / args[0]
+    return reduce(lambda x, y: x / y, args)
 
 
-def let(args, ctx):
-    param_assignments, expr = args
-    new_ctx = ctx
-    for assignment in param_assignments:
-        if type(assignment) == tuple:
-            name, value = assignment
-            new_ctx = assign(name, value, new_ctx)
-    return expression(expr, new_ctx)
+def join(args):
+    return "".join(args)
+
+
+def equal(args):
+    return reduce(lambda x, y: x == y, args)
+
+
+primitive_procedures = (
+    ("+", add),
+    ("-", subtract),
+    ("*", multiply),
+    ("/", divide),
+    ("==", equal),
+    ("str", join)
+)
+
+primitive_procedures_names = [p[0] for p in primitive_procedures]
+
+
+def is_primitive_procedure(procedure):
+    return procedure in primitive_procedures_names
+
+
+def apply_primitive_procedure(procedure, args):
+    return next(v for (k, v) in primitive_procedures if k == procedure)(args)
+
+
+def apply(procedure, args):
+    if is_primitive_procedure(procedure):
+        return apply_primitive_procedure(procedure, args)
+
+
+def is_variable(expr):
+    return type(expr) == list and len(expr) == 2 and expr[0] == "ret"
+
+
+def look_up_variable(var, env):
+    return next((v for (k, v) in env if k == var), None)
+
+
+def is_let(expr):
+    return type(expr) == list and len(expr) >= 3 and expr[0] == "let"
+
+
+def eval_let(expr, env):
+    bindings, exprs = expr
+    new_env = env
+    for k, v in bindings:
+        new_env += ((evaluate(k, env), evaluate(v, env)),)
+    return evaluate(exprs, new_env)
+
+
+def is_if(expr):
+    return type(expr) == list and len(expr) == 4 and expr[0] == "if"
+
+
+def eval_if(expr, env):
+    predicate, consequent, alternative = expr
+    if evaluate(predicate, env):
+        return evaluate(consequent, env)
+    return evaluate(alternative, env)
+
+
+def evaluate(expr, env=()):
+    if is_self_evaluating(expr):
+        return expr
+    if is_variable(expr):
+        return look_up_variable(expr[1], env)
+    if is_let(expr):
+        return eval_let(expr[1:], env)
+    if is_if(expr):
+        return eval_if(expr[1:], env)
+    if is_application(expr):
+        operator, *operands = expr
+        return apply(
+            evaluate(operator, env),
+            [evaluate(op, env) for op in operands])
