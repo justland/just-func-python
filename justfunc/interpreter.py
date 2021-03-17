@@ -39,24 +39,22 @@ def equal(args):
     return reduce(lambda x, y: x == y, args)
 
 
-primitive_procedures = (
-    ("+", add),
-    ("-", subtract),
-    ("*", multiply),
-    ("/", divide),
-    ("==", equal),
-    ("str", join)
-)
-
-primitive_procedures_names = [p[0] for p in primitive_procedures]
+primitive_procedures = {
+    "+": add,
+    "-": subtract,
+    "*": multiply,
+    "/": divide,
+    "==": equal,
+    "str": join
+}
 
 
 def is_primitive_procedure(procedure):
-    return procedure in primitive_procedures_names
+    return procedure in primitive_procedures
 
 
 def apply_primitive_procedure(procedure, args):
-    return next(v for (k, v) in primitive_procedures if k == procedure)(args)
+    return primitive_procedures.get(procedure)(args)
 
 
 def apply(procedure, args):
@@ -64,12 +62,12 @@ def apply(procedure, args):
         return apply_primitive_procedure(procedure, args)
 
 
-def is_variable(expr):
-    return type(expr) == list and len(expr) == 2 and expr[0] == "ret"
+def is_variable(expr, env):
+    return type(expr) == list and len(expr) == 1 and expr[0] in env
 
 
 def look_up_variable(var, env):
-    return next((v for (k, v) in env if k == var), None)
+    return env.get(var)
 
 
 def is_let(expr):
@@ -78,10 +76,8 @@ def is_let(expr):
 
 def eval_let(expr, env):
     bindings, exprs = expr
-    new_env = env
-    for k, v in bindings:
-        new_env += ((evaluate(k, env), evaluate(v, env)),)
-    return evaluate(exprs, new_env)
+    new_env = {evaluate(k, env): evaluate(v, env) for (k, v) in bindings}
+    return evaluate(exprs, dict(**env, **new_env))
 
 
 def is_if(expr):
@@ -95,11 +91,12 @@ def eval_if(expr, env):
     return evaluate(alternative, env)
 
 
-def evaluate(expr, env=()):
+def evaluate(expr, env=None):
+    env = env if env else dict()
     if is_self_evaluating(expr):
         return expr
-    if is_variable(expr):
-        return look_up_variable(expr[1], env)
+    if is_variable(expr, env):
+        return look_up_variable(expr[0], env)
     if is_let(expr):
         return eval_let(expr[1:], env)
     if is_if(expr):
