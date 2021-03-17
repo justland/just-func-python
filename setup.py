@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="just-func",
-    version="0.1dev",
+    version="0.0.1",
     author="Vincent White",
     author_email="xstrengthofonex@gmail.com",
     description="A python interpreter for the just-func language",
