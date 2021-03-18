@@ -45,7 +45,8 @@ primitive_procedures = {
     "*": multiply,
     "/": divide,
     "==": equal,
-    "str": join
+    "str": join,
+    "not": lambda a: not a[0]
 }
 
 
@@ -63,25 +64,35 @@ def apply(procedure, args):
 
 
 def is_variable(expr, env):
-    return type(expr) == list and len(expr) == 1 and expr[0] in env
+    return (type(expr) == list
+            and expr[0] in env)
 
 
-def look_up_variable(var, env):
-    return env.get(var)
+def look_up_variable(expr, env):
+    var, *args = expr
+    val = env.get(var)
+    if callable(val):
+        return val([evaluate(arg, env) for arg in args])
+    return val
 
 
 def is_let(expr):
-    return type(expr) == list and len(expr) >= 3 and expr[0] == "let"
+    return (type(expr) == list
+            and len(expr) >= 3
+            and expr[0] == "let")
 
 
 def eval_let(expr, env):
-    bindings, exprs = expr
-    new_env = {evaluate(k, env): evaluate(v, env) for (k, v) in bindings}
-    return evaluate(exprs, dict(**env, **new_env))
+    new_env = {
+        evaluate(k, env): evaluate(v, env)
+        for (k, v) in expr[0]}
+    return evaluate(expr[1], dict(**env, **new_env))
 
 
 def is_if(expr):
-    return type(expr) == list and len(expr) == 4 and expr[0] == "if"
+    return (type(expr) == list
+            and len(expr) == 4
+            and expr[0] == "if")
 
 
 def eval_if(expr, env):
@@ -91,14 +102,33 @@ def eval_if(expr, env):
     return evaluate(alternative, env)
 
 
+def is_fn(expr):
+    return (type(expr) == list
+            and len(expr) >= 4
+            and expr[0] == "fn"
+            and type(expr[1]) == str
+            and type(expr) == list)
+
+
+def eval_fn(expr, env):
+    def fn(args):
+        new_env = {
+            evaluate(k, env): evaluate(v, env)
+            for (k, v) in zip(expr[1], args)}
+        return evaluate(expr[2], dict(**env, **new_env))
+    env[expr[0]] = fn
+
+
 def evaluate(expr, env=None):
-    env = env if env else dict()
+    env = env if env is not None else dict()
     if is_self_evaluating(expr):
         return expr
     if is_variable(expr, env):
-        return look_up_variable(expr[0], env)
+        return look_up_variable(expr, env)
     if is_let(expr):
         return eval_let(expr[1:], env)
+    if is_fn(expr):
+        return eval_fn(expr[1:], env)
     if is_if(expr):
         return eval_if(expr[1:], env)
     if is_application(expr):
