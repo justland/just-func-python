@@ -1,4 +1,4 @@
-from functools import reduce
+from justfunc import primitives
 
 
 def is_self_evaluating(expr):
@@ -9,71 +9,54 @@ def is_application(expr):
     return type(expr) == list and len(expr) >= 1
 
 
-def add(args):
-    if not args:
-        return 0
-    return reduce(lambda x, y: x + y, args, 0)
-
-
-def subtract(args):
-    if len(args) == 1:
-        return -args[0]
-    return reduce(lambda x, y: x - y, args[1:], args[0])
-
-
-def multiply(args):
-    return reduce(lambda x, y: x * y, args, 1)
-
-
-def divide(args):
-    if len(args) == 1:
-        return 1 / args[0]
-    return reduce(lambda x, y: x / y, args)
-
-
-def join(args):
-    return "".join(args)
-
-
-def equal(args):
-    return reduce(lambda x, y: x == y, args)
-
-
-primitive_procedures = {
-    "+": add,
-    "-": subtract,
-    "*": multiply,
-    "/": divide,
-    "==": equal,
-    "str": join,
-    "not": lambda a: not a[0]
-}
-
-
 def is_primitive_procedure(procedure):
-    return procedure in primitive_procedures
+    return callable(procedure)
 
 
 def apply_primitive_procedure(procedure, args):
-    return primitive_procedures.get(procedure)(args)
+    return procedure(args)
+
+
+def is_closure(procedure):
+    return (type(procedure) == list,
+            len(procedure) == 4,
+            procedure[0] == "closure")
 
 
 def apply(procedure, args):
     if is_primitive_procedure(procedure):
         return apply_primitive_procedure(procedure, args)
+    if is_closure(procedure):
+        params, body, env = procedure[1:]
+        bindings = {
+            k: create_procedure([], v, env)
+            for (k, v) in zip(params, args)}
+        new_env = dict(**env, **bindings)
+        return evaluate(body, new_env)
 
 
-def is_variable(expr, env):
+def is_variable(expr):
     return (type(expr) == list
-            and expr[0] in env)
+            and len(expr) == 2
+            and expr[0] == "ret")
 
 
-def look_up_variable(expr, env):
-    var, *args = expr
-    val = env.get(var)
-    if callable(val):
-        return val([evaluate(arg, env) for arg in args])
-    return val
+def look_up_variable(var, env):
+    return env.get(var, lambda _: None)
+
+
+def is_mod(expr):
+    return (type(expr) == list and
+            len(expr) >= 2 and
+            expr[0] == "mod")
+
+
+def eval_mod(exprs, env):
+    return [evaluate(expr, env) for expr in exprs][-1]
+
+
+def create_procedure(params, body, env):
+    return ["closure", params, body, dict(env)]
 
 
 def is_let(expr):
@@ -84,7 +67,7 @@ def is_let(expr):
 
 def eval_let(expr, env):
     new_env = {
-        evaluate(k, env): evaluate(v, env)
+        evaluate(k, env): create_procedure([], v, dict(env))
         for (k, v) in expr[0]}
     return evaluate(expr[1], dict(**env, **new_env))
 
@@ -111,20 +94,32 @@ def is_fn(expr):
 
 
 def eval_fn(expr, env):
-    def fn(args):
-        new_env = {
-            evaluate(k, env): evaluate(v, env)
-            for (k, v) in zip(expr[1], args)}
-        return evaluate(expr[2], dict(**env, **new_env))
-    env[expr[0]] = fn
+    name, params, body = expr
+    env[name] = create_procedure(params, body, env)
+
+
+def global_env(initial_env=None):
+    env = initial_env or dict()
+    env.update({
+        "+": primitives.add,
+        "-": primitives.subtract,
+        "*": primitives.multiply,
+        "/": primitives.divide,
+        "==": primitives.equal,
+        "str": primitives.join,
+        "not": lambda a: not a[0]
+    })
+    return env
 
 
 def evaluate(expr, env=None):
-    env = env if env is not None else dict()
+    env = global_env(env or dict())
     if is_self_evaluating(expr):
         return expr
-    if is_variable(expr, env):
-        return look_up_variable(expr, env)
+    if is_variable(expr):
+        return look_up_variable(expr[1], env)
+    if is_mod(expr):
+        return eval_mod(expr[1:], env)
     if is_let(expr):
         return eval_let(expr[1:], env)
     if is_fn(expr):
@@ -134,5 +129,5 @@ def evaluate(expr, env=None):
     if is_application(expr):
         operator, *operands = expr
         return apply(
-            evaluate(operator, env),
+            evaluate(["ret", operator], env),
             [evaluate(op, env) for op in operands])
