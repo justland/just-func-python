@@ -2,9 +2,7 @@ from functools import reduce
 
 
 def add(args):
-    if not args:
-        return 0
-    return reduce(lambda x, y: x + y, args, 0)
+    return sum(args)
 
 
 def subtract(args):
