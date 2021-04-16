@@ -13,13 +13,13 @@ class Interpreter:
 def global_env(initial_env=None):
     env = initial_env or dict()
     env.update({
-        "+": primitives.add,
-        "-": primitives.subtract,
-        "*": primitives.multiply,
-        "/": primitives.divide,
-        "==": primitives.equal,
-        "str": primitives.join,
-        "not": lambda a: not a[0]
+        "+": ["primitive", primitives.add],
+        "-": ["primitive", primitives.subtract],
+        "*": ["primitive", primitives.multiply],
+        "/": ["primitive", primitives.divide],
+        "==": ["primitive", primitives.equal],
+        "str": ["primitive", primitives.join],
+        "not": ["primitive", lambda a: not a[0]]
     })
     return env
 
@@ -138,11 +138,14 @@ def apply(procedure, args):
 
 
 def is_primitive_procedure(procedure):
-    return callable(procedure)
+    return type(procedure) == list \
+           and len(procedure) == 2 \
+           and procedure[0] == "primitive"
 
 
-def apply_primitive_procedure(procedure, args):
-    return procedure(args)
+def apply_primitive_procedure(proc, args):
+    _, primitive_procedure = proc
+    return primitive_procedure(args)
 
 
 def is_closure(procedure):
