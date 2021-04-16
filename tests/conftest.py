@@ -4,5 +4,5 @@ from justfunc.interpreter import Interpreter
 
 
 @pytest.fixture
-def evaluate():
+def evaluated():
     return Interpreter().run

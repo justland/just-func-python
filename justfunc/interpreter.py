@@ -1,5 +1,6 @@
 from justfunc import primitives
 from justfunc.env import Env, UnboundVariableError
+from justfunc.reader import Symbol, read
 
 
 class Interpreter:
@@ -7,7 +8,7 @@ class Interpreter:
         self.env = Env.new(global_env())
 
     def run(self, src):
-        return evaluate(src, self.env)
+        return evaluate(read(src), self.env)
 
 
 def global_env(initial_env=None):
@@ -19,7 +20,9 @@ def global_env(initial_env=None):
         "/": ["primitive", primitives.divide],
         "==": ["primitive", primitives.equal],
         "str": ["primitive", primitives.join],
-        "not": ["primitive", lambda a: not a[0]]
+        "not": ["primitive", lambda a: not a[0]],
+        "true": True,
+        "false": False,
     })
     return env
 
@@ -28,7 +31,7 @@ def evaluate(expr, env):
     if is_self_evaluating(expr):
         return expr
     if is_variable(expr):
-        return look_up_variable(expr[1], env)
+        return look_up_variable(expr, env)
     if is_mod(expr):
         return eval_mod(expr[1:], env)
     if is_let(expr):
@@ -44,27 +47,25 @@ def evaluate(expr, env):
 
 
 def is_self_evaluating(expr):
-    return type(expr) in [str, int, float, bool, dict, None]
+    return type(expr) in [str, int, float, None, dict]
 
 
 def is_variable(expr):
-    return (type(expr) == list
-            and len(expr) == 2
-            and expr[0] == "ret")
+    return type(expr) == Symbol
 
 
-def look_up_variable(var, env):
+def look_up_variable(symbol, env):
     try:
-        value = env.lookup_variable_value(var)
-    except UnboundVariableError:
-        return None
+        value = env.lookup_variable_value(symbol.value)
+    except UnboundVariableError as e:
+        raise e
     return value
 
 
 def is_mod(expr):
     return (type(expr) == list and
             len(expr) >= 2 and
-            expr[0] == "mod")
+            expr[0] == Symbol("mod"))
 
 
 def eval_mod(exprs, env):
@@ -74,20 +75,21 @@ def eval_mod(exprs, env):
 def is_let(expr):
     return (type(expr) == list
             and len(expr) >= 3
-            and expr[0] == "let")
+            and expr[0] == Symbol("let"))
 
 
 def eval_let(expr, env):
+    bindings, body = expr
     new_env = {
-        evaluate(k, env): create_procedure([], v, env)
-        for (k, v) in expr[0]}
-    return evaluate(expr[1], env.extend(new_env))
+        symbol.value: evaluate(v, env)
+        for (symbol, v) in bindings}
+    return evaluate(body, env.extend(new_env))
 
 
 def is_if(expr):
     return (type(expr) == list
             and len(expr) == 4
-            and expr[0] == "if")
+            and expr[0] == Symbol("if"))
 
 
 def eval_if(expr, env):
@@ -100,14 +102,14 @@ def eval_if(expr, env):
 def is_fn(expr):
     return (type(expr) == list
             and len(expr) >= 4
-            and expr[0] == "fn"
-            and type(expr[1]) == str
+            and expr[0] == Symbol("fn")
+            and type(expr[1]) == Symbol
             and type(expr) == list)
 
 
 def eval_fn(expr, env):
-    name, params, body = expr
-    env.define_variable(name, create_procedure(params, body, env))
+    symbol, params, body = expr
+    env.define_variable(symbol.value, create_procedure(params, body, env))
 
 
 def create_procedure(params, body, env):
@@ -115,7 +117,7 @@ def create_procedure(params, body, env):
 
 
 def operator(expr):
-    return ["ret", expr[0]]
+    return expr[0]
 
 
 def operands(expr):
@@ -132,8 +134,8 @@ def apply(procedure, args):
     if is_closure(procedure):
         params, body, env = procedure[1:]
         bindings = {
-            k: create_procedure([], v, env)
-            for (k, v) in zip(params, args)}
+            symbol.value: v
+            for (symbol, v) in zip(params, args)}
         return evaluate(body, env.extend(bindings))
 
 
@@ -149,6 +151,6 @@ def apply_primitive_procedure(proc, args):
 
 
 def is_closure(procedure):
-    return (type(procedure) == list,
-            len(procedure) == 4,
-            procedure[0] == "closure")
+    return type(procedure) == list \
+           and len(procedure) == 4 \
+           and procedure[0] == "closure"

@@ -1,12 +1,12 @@
 
 
-def test_evaluates_literals(evaluate):
-    assert evaluate(0) == 0
-    assert evaluate(1) == 1
-    assert evaluate(1.5) == 1.5
-    assert evaluate("") == ""
-    assert evaluate("a string") == "a string"
-    assert evaluate(True) is True
-    assert evaluate(False) is False
-    assert evaluate({}) == {}
-    assert evaluate(None) is None
+def test_evaluates_literals(evaluated):
+    assert evaluated('0') == 0
+    assert evaluated('1') == 1
+    assert evaluated('1.5') == 1.5
+    assert evaluated('"\'\'"') == ""
+    assert evaluated('"\'a string\'"') == "a string"
+    assert evaluated('true') is True
+    assert evaluated('false') is False
+    assert evaluated('{}') == {}
+    assert evaluated('null') is None
