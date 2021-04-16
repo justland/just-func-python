@@ -1,7 +1,5 @@
 import pytest
 
-from justfunc.interpreter import evaluate
-
 
 @pytest.mark.parametrize("expr", [
     ["==", 1, 1],
@@ -11,5 +9,5 @@ from justfunc.interpreter import evaluate
     ["==", 1, True],
     ["==", None, None]
 ])
-def test_equal(expr):
+def test_equal(expr, evaluate):
     assert evaluate(expr)

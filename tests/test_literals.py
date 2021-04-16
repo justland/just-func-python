@@ -1,7 +1,6 @@
-from justfunc.interpreter import evaluate
 
 
-def test_evaluates_literals():
+def test_evaluates_literals(evaluate):
     assert evaluate(0) == 0
     assert evaluate(1) == 1
     assert evaluate(1.5) == 1.5

@@ -1,8 +1,30 @@
 from justfunc import primitives
+from justfunc.env import Env, UnboundVariableError
 
 
-def evaluate(expr, env=None):
-    env = global_env(env or dict())
+class Interpreter:
+    def __init__(self):
+        self.env = Env.new(global_env())
+
+    def run(self, src):
+        return evaluate(src, self.env)
+
+
+def global_env(initial_env=None):
+    env = initial_env or dict()
+    env.update({
+        "+": primitives.add,
+        "-": primitives.subtract,
+        "*": primitives.multiply,
+        "/": primitives.divide,
+        "==": primitives.equal,
+        "str": primitives.join,
+        "not": lambda a: not a[0]
+    })
+    return env
+
+
+def evaluate(expr, env):
     if is_self_evaluating(expr):
         return expr
     if is_variable(expr):
@@ -21,20 +43,6 @@ def evaluate(expr, env=None):
             [evaluate(op, env) for op in operands(expr)])
 
 
-def global_env(initial_env=None):
-    env = initial_env or dict()
-    env.update({
-        "+": primitives.add,
-        "-": primitives.subtract,
-        "*": primitives.multiply,
-        "/": primitives.divide,
-        "==": primitives.equal,
-        "str": primitives.join,
-        "not": lambda a: not a[0]
-    })
-    return env
-
-
 def is_self_evaluating(expr):
     return type(expr) in [str, int, float, bool, dict, None]
 
@@ -46,7 +54,11 @@ def is_variable(expr):
 
 
 def look_up_variable(var, env):
-    return env.get(var, lambda _: None)
+    try:
+        value = env.lookup_variable_value(var)
+    except UnboundVariableError:
+        return None
+    return value
 
 
 def is_mod(expr):
@@ -67,9 +79,9 @@ def is_let(expr):
 
 def eval_let(expr, env):
     new_env = {
-        evaluate(k, env): create_procedure([], v, dict(env))
+        evaluate(k, env): create_procedure([], v, env)
         for (k, v) in expr[0]}
-    return evaluate(expr[1], dict(**env, **new_env))
+    return evaluate(expr[1], env.extend(new_env))
 
 
 def is_if(expr):
@@ -95,11 +107,11 @@ def is_fn(expr):
 
 def eval_fn(expr, env):
     name, params, body = expr
-    env[name] = create_procedure(params, body, env)
+    env.define_variable(name, create_procedure(params, body, env))
 
 
 def create_procedure(params, body, env):
-    return ["closure", params, body, dict(env)]
+    return ["closure", params, body, env]
 
 
 def operator(expr):
@@ -122,8 +134,7 @@ def apply(procedure, args):
         bindings = {
             k: create_procedure([], v, env)
             for (k, v) in zip(params, args)}
-        new_env = dict(**env, **bindings)
-        return evaluate(body, new_env)
+        return evaluate(body, env.extend(bindings))
 
 
 def is_primitive_procedure(procedure):
