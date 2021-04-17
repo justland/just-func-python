@@ -1,3 +1,5 @@
+import json
+
 from justfunc.env import setup_env
 from justfunc.evaluator import evaluate
 from justfunc.reader import read
@@ -14,8 +16,7 @@ class JustFunc:
         while line := input(prompt):
             try:
                 result = self.run(line)
-                if result is not None:
-                    print(result)
+                print(json.dumps(result))
             except RuntimeError as e:
                 print(e.args[0])
 
