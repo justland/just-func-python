@@ -43,8 +43,6 @@ def setup_env(initial_env=None):
         "/": ["primitive", primitives.divide],
         "==": ["primitive", primitives.equal],
         "str": ["primitive", primitives.join],
-        "not": ["primitive", lambda a: not a[0]],
-        "true": True,
-        "false": False,
+        "not": ["primitive", lambda a: not a[0]]
     })
     return Env.new(initial_env)

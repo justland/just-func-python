@@ -22,7 +22,7 @@ def evaluate(expr, env):
 
 
 def is_self_evaluating(expr):
-    return type(expr) in [str, int, float, None, dict]
+    return expr is None or type(expr) in [str, int, float, bool, dict]
 
 
 def is_variable(expr):
