@@ -1,30 +1,5 @@
-from justfunc import primitives
-from justfunc.env import Env, UnboundVariableError
-from justfunc.reader import Symbol, read
-
-
-class Interpreter:
-    def __init__(self):
-        self.env = Env.new(global_env())
-
-    def run(self, src):
-        return evaluate(read(src), self.env)
-
-
-def global_env(initial_env=None):
-    env = initial_env or dict()
-    env.update({
-        "+": ["primitive", primitives.add],
-        "-": ["primitive", primitives.subtract],
-        "*": ["primitive", primitives.multiply],
-        "/": ["primitive", primitives.divide],
-        "==": ["primitive", primitives.equal],
-        "str": ["primitive", primitives.join],
-        "not": ["primitive", lambda a: not a[0]],
-        "true": True,
-        "false": False,
-    })
-    return env
+from justfunc.env import UnboundVariableError
+from justfunc.reader import Symbol
 
 
 def evaluate(expr, env):

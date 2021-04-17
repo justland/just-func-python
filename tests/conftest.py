@@ -1,8 +1,8 @@
 import pytest
 
-from justfunc.interpreter import Interpreter
+from justfunc import JustFunc
 
 
 @pytest.fixture
 def evaluated():
-    return Interpreter().run
+    return JustFunc().run

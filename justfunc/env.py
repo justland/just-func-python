@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 
+from justfunc import primitives
+
 
 class UnboundVariableError(RuntimeError):
     pass
@@ -30,3 +32,19 @@ class Env:
 
     def extend(self, frame):
         return Env([frame] + self.frames)
+
+
+def setup_env(initial_env=None):
+    initial_env = initial_env or dict()
+    initial_env.update({
+        "+": ["primitive", primitives.add],
+        "-": ["primitive", primitives.subtract],
+        "*": ["primitive", primitives.multiply],
+        "/": ["primitive", primitives.divide],
+        "==": ["primitive", primitives.equal],
+        "str": ["primitive", primitives.join],
+        "not": ["primitive", lambda a: not a[0]],
+        "true": True,
+        "false": False,
+    })
+    return Env.new(initial_env)
