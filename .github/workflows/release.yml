@@ -25,6 +25,9 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           python-version: '3.13'
+          # The release job only builds when a publish is due, so there is nothing
+          # to cache and setup-uv's post step errors on the missing cache path.
+          enable-cache: false
 
       - name: Resolve version
         id: version
