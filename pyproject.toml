@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "just-func"
+version = "0.0.1"
+description = "A python interpreter for the just-func language"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Vincent White", email = "xstrengthofonex@gmail.com" }]
+keywords = ["just-func", "interpreter", "lisp", "language"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Interpreters",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/justland/just-func-python"
+Repository = "https://github.com/justland/just-func-python"
+Issues = "https://github.com/justland/just-func-python/issues"
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["justfunc"]
+
+[tool.hatch.build.targets.sdist]
+include = ["justfunc", "tests", "README.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-rf --import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]

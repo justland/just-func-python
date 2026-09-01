@@ -16,9 +16,7 @@ def evaluate(expr, env):
     if is_if(expr):
         return eval_if(expr[1:], env)
     if is_application(expr):
-        return apply(
-            evaluate(operator(expr), env),
-            [evaluate(op, env) for op in operands(expr)])
+        return apply(evaluate(operator(expr), env), [evaluate(op, env) for op in operands(expr)])
 
 
 def is_self_evaluating(expr):
@@ -26,7 +24,7 @@ def is_self_evaluating(expr):
 
 
 def is_variable(expr):
-    return type(expr) == Symbol
+    return type(expr) is Symbol
 
 
 def look_up_variable(symbol, env):
@@ -38,9 +36,7 @@ def look_up_variable(symbol, env):
 
 
 def is_mod(expr):
-    return (type(expr) == list and
-            len(expr) >= 2 and
-            expr[0] == Symbol("mod"))
+    return type(expr) is list and len(expr) >= 2 and expr[0] == Symbol("mod")
 
 
 def eval_mod(exprs, env):
@@ -48,23 +44,17 @@ def eval_mod(exprs, env):
 
 
 def is_let(expr):
-    return (type(expr) == list
-            and len(expr) >= 3
-            and expr[0] == Symbol("let"))
+    return type(expr) is list and len(expr) >= 3 and expr[0] == Symbol("let")
 
 
 def eval_let(expr, env):
     bindings, body = expr
-    new_env = {
-        symbol.value: evaluate(v, env)
-        for (symbol, v) in bindings}
+    new_env = {symbol.value: evaluate(v, env) for (symbol, v) in bindings}
     return evaluate(body, env.extend(new_env))
 
 
 def is_if(expr):
-    return (type(expr) == list
-            and len(expr) == 4
-            and expr[0] == Symbol("if"))
+    return type(expr) is list and len(expr) == 4 and expr[0] == Symbol("if")
 
 
 def eval_if(expr, env):
@@ -75,11 +65,13 @@ def eval_if(expr, env):
 
 
 def is_fn(expr):
-    return (type(expr) == list
-            and len(expr) >= 4
-            and expr[0] == Symbol("fn")
-            and type(expr[1]) == Symbol
-            and type(expr) == list)
+    return (
+        type(expr) is list
+        and len(expr) >= 4
+        and expr[0] == Symbol("fn")
+        and type(expr[1]) is Symbol
+        and type(expr) is list
+    )
 
 
 def eval_fn(expr, env):
@@ -100,7 +92,7 @@ def operands(expr):
 
 
 def is_application(expr):
-    return type(expr) == list and len(expr) >= 1
+    return type(expr) is list and len(expr) >= 1
 
 
 def apply(procedure, args):
@@ -108,16 +100,12 @@ def apply(procedure, args):
         return apply_primitive_procedure(procedure, args)
     if is_closure(procedure):
         params, body, env = procedure[1:]
-        bindings = {
-            symbol.value: v
-            for (symbol, v) in zip(params, args)}
+        bindings = {symbol.value: v for (symbol, v) in zip(params, args, strict=True)}
         return evaluate(body, env.extend(bindings))
 
 
 def is_primitive_procedure(procedure):
-    return type(procedure) == list \
-           and len(procedure) == 2 \
-           and procedure[0] == "primitive"
+    return type(procedure) is list and len(procedure) == 2 and procedure[0] == "primitive"
 
 
 def apply_primitive_procedure(proc, args):
@@ -126,6 +114,4 @@ def apply_primitive_procedure(proc, args):
 
 
 def is_closure(procedure):
-    return type(procedure) == list \
-           and len(procedure) == 4 \
-           and procedure[0] == "closure"
+    return type(procedure) is list and len(procedure) == 4 and procedure[0] == "closure"

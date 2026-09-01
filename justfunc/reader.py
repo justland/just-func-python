@@ -14,7 +14,7 @@ def tokenize(src):
 
 
 def parse(expr):
-    if type(expr) == list:
+    if type(expr) is list:
         return [parse(e) for e in expr]
     return atom(expr)
 
@@ -22,7 +22,7 @@ def parse(expr):
 def atom(token):
     if token is None or type(token) in [float, int, bool, dict]:
         return token
-    if type(token) == str and (token.startswith("'") and token.endswith("'")):
+    if type(token) is str and (token.startswith("'") and token.endswith("'")):
         return token[1:-1]
     return Symbol(sys.intern(token))
 
@@ -31,5 +31,5 @@ def read(src):
     try:
         tokens = tokenize(src)
     except JSONDecodeError as e:
-        raise RuntimeError(e)
+        raise RuntimeError(e) from e
     return parse(tokens)
