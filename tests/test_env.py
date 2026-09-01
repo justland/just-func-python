@@ -34,4 +34,3 @@ def test_definitions_in_initial_environment_reflect_in_extended(an_env):
     extended_env = an_env.extend({})
     an_env.define_variable("d", 4)
     assert extended_env.lookup_variable_value("d") == 4
-

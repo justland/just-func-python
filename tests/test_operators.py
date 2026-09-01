@@ -1,5 +1,3 @@
-
-
 def test_add(evaluated):
     assert evaluated('["+"]') == 0
     assert evaluated('["+", 1]') == 1
@@ -33,4 +31,4 @@ def test_divide(evaluated):
 
 
 def test_operator_combinations(evaluated):
-    return evaluated('["+", ["*", 3, 5], ["-", 10, 6]]') == 19
+    assert evaluated('["+", ["*", 3, 5], ["-", 10, 6]]') == 19
